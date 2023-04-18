@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 import rospy
 import math
-from std_msgs.msg import Float32
+from std_msgs.msg import Float32, Empty
 from geometry_msgs.msg import Twist, Pose, TransformStamped, Vector3, Quaternion
+from nav_msgs.msg import Odometry
 from tf2_geometry_msgs import PoseStamped
 from tf.transformations import quaternion_from_euler 
 from tf2_ros import TransformBroadcaster 
@@ -16,19 +17,28 @@ class kinematic_model:
         self.pub = rospy.Publisher('/pose_sim', PoseStamped, queue_size=10)
         self.wl = rospy.Publisher('/wl', Float32, queue_size=10)
         self.wr = rospy.Publisher('/wr', Float32, queue_size=10)
-        self.radius = 0.1
+        self.odom = rospy.Publisher('/odom', Odometry, queue_size=10)
+        self.radius = .05
+        self.wheel_distance = .08
         self.frequency = 100
         rospy.Subscriber('/cmd_vel', Twist, self.update_values)
+        rospy.Subscriber('/restart', Empty, self.restart)
 
-    def calculate(self) -> None:
+    def calculate_pose(self) -> None:
         self.x += self.linear_vel *math.cos(self.theta) / self.frequency 
         self.y += self.linear_vel *math.sin(self.theta) / self.frequency 
-        self.theta += math.radians(self.angular_vel)
+        #self.theta += math.radians(self.angular_vel)
+        self.theta += self.angular_vel / self.frequency
         self.publish_stamp()
 
     def calculate_wheels(self) -> None:
-        self.wl.publish((self.linear_vel - self.angular_vel)/self.radius)
-        self.wr.publish((self.linear_vel + self.angular_vel)/self.radius)
+        self.wl.publish((self.linear_vel*2 - self.angular_vel*self.wheel_distance)/(2*self.radius))
+        self.wr.publish((self.linear_vel*2 + self.angular_vel*self.wheel_distance)/(2*self.radius))
+
+    def restart(self, empty: Empty) -> None:
+        self.x = 0
+        self.y = 0
+        self.theta = 0
 
     def publish_stamp(self) -> None:
         poseStamped = PoseStamped()
@@ -43,7 +53,7 @@ class kinematic_model:
         poseStamped.pose.orientation.w = q[3]
 
         poseStamped.header.frame_id = "base_link"
-        self.broadcastTransform(poseStamped.pose.orientation)
+        self.broadcast_transform(poseStamped.pose.orientation)
         self.pub.publish(poseStamped)
 
 
@@ -57,7 +67,7 @@ class kinematic_model:
         self.theta = pose.orientation.z
 
     #Send transformation using broadcaster
-    def broadcastTransform(self, orientation: Quaternion):
+    def broadcast_transform(self, orientation: Quaternion):
         #Initialize broadcaster
         br = TransformBroadcaster()
         t = TransformStamped()
@@ -71,13 +81,16 @@ class kinematic_model:
         #Send transform
         br.sendTransform(t)
 
+    def run(self) -> None:
+        self.calculate_pose()
+        self.calculate_wheels()
+
 def main():
     rospy.init_node('puzzlebot_sim', anonymous=True)
     model = kinematic_model()
     rate = rospy.Rate(100)
     while not rospy.is_shutdown():
-        model.calculate()
-        model.calculate_wheels()
+        model.run()
         rate.sleep()
 
 if (__name__== "__main__") :
