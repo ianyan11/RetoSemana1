@@ -3,14 +3,17 @@
 
     <!--load robot description -->
     <param name="robot_description" command="$(find xacro)/xacro --inorder '$(find puzzlebot_gazebo)/urdf/puzzlebot.xacro'" />
+    
 
     <node name="puzzlebot_sim" pkg="puzzlebot_sim" type="kinematic_model.py"/>
     <node name="localisation" pkg="puzzlebot_sim" type="odom.py"/>
-
+    <!--
     <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="false" output="screen"/>
     <node name="joint_state_publisher"  pkg="joint_state_publisher" type="joint_state_publisher"/>
     
-    <include file="$(find puzzlebot_control)/launch/puzzlebot_control.launch"/>"
+    <include file="$(find puzzlebot_control)/launch/puzzlebot_control.launch"/>-->
+    <include file="$(find puzzlebot_world)/launch/puzzlebot_tec_simple_world.launch"/>
+
     <node name = "rviz" pkg="rviz" type = "rviz" args = "-d $(find puzzlebot_sim)/puzzlebot_rviz/robot_sim.rviz" required = "true"/>
 </launch>
 

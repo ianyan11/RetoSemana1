@@ -10,6 +10,8 @@ from tf.transformations import quaternion_from_euler
 class Odom():
 
     def __init__(self, rate):
+        self.kr = 100
+        self.kl = 100
         self.wl = 0
         self.wr = 0
         self.rate =rate
@@ -20,6 +22,21 @@ class Odom():
         rospy.Subscriber('/wr', Float32, self.update_wr)
         self.odom = rospy.Publisher('/odom', Odometry, queue_size=10)
         self.odomConstants = self.fill_odomerty()
+        self.Qk = np.array([
+            [0.5, 0.01, 0.01],
+            [0.01, 0.5, 0.01],
+            [0.01, 0.01, 0.2]
+        ] )
+        self.Hk = np.array([
+            [1, 0, 0],
+            [0, 1, 0],
+            [0, 0, 1]
+        ])
+        self.sigmak = np.array([
+            [0, 0, 0.0],
+            [0, 0, 0.0],
+            [0, 0, 0.0]
+        ])
 
     def update_wl(self, wl: Float32) -> None:
         self.wl = wl.data
@@ -29,9 +46,11 @@ class Odom():
 
     def calculate_odometry(self) -> None:
         l = self.wheel_distance
-        mat = np.array([[.5, .5], [1/l, -1/l]])*self.wheel_radius
-        deltaD, deltaTheta = np.dot(mat, np.array([self.wr, self.wl]))
+        mat = np.array([[.5, .5], [1/l, -1/l]])
+        deltaD, deltaTheta = np.dot(mat, np.array([self.wr, self.wl])*self.wheel_radius)
+        self.calculcate_covariance(deltaD)
         self.pose += np.array([deltaD * math.cos(self.pose[2]), deltaD * math.sin(self.pose[2]), deltaTheta])/self.rate
+
         self.odomConstants.pose.pose.position = Point(self.pose[0], self.pose[1], self.wheel_radius)
         q = quaternion_from_euler(0, 0, self.pose[2])
         self.odomConstants.header.stamp = rospy.Time.now() #time stamp
@@ -43,6 +62,28 @@ class Odom():
         self.odomConstants.twist.twist.angular.z = deltaTheta
         self.odom.publish(self.odomConstants)
 
+    def calculcate_covariance(self, deltaD) -> None:
+
+        self.Hk[0][2] = -deltaD * math.sin(self.pose[2])/self.rate
+        self.Hk[1][2] = deltaD * math.cos(self.pose[2])/self.rate
+        wk = self.wheel_radius/(2*self.rate)*np.array([[math.cos(self.pose[2]),math.cos(self.pose[2])],
+                                           [math.sin(self.pose[2]),math.sin(self.pose[2])],
+                                           [2/self.wheel_distance, -2/self.wheel_distance]])
+        Edk = np.array([[self.kr*abs(self.wr), 0],
+                       [0, self.kl*abs(self.wl)]])
+      
+        self.Qk = np.dot(np.dot(wk,Edk),np.transpose(wk))
+        self.sigmak = np.dot(np.dot(self.Hk, self.sigmak), np.transpose(self.Hk))+self.Qk
+        self.odomConstants.pose.covariance[0] = self.sigmak[0][0] 
+        self.odomConstants.pose.covariance[1] = self.sigmak[0][1]
+        self.odomConstants.pose.covariance[5] = self.sigmak[0][2]
+        self.odomConstants.pose.covariance[6] = self.sigmak[1][0]
+        self.odomConstants.pose.covariance[7] = self.sigmak[1][1]
+        self.odomConstants.pose.covariance[11] = self.sigmak[1][2]
+        self.odomConstants.pose.covariance[30] = self.sigmak[2][0]
+        self.odomConstants.pose.covariance[31] = self.sigmak[2][1]
+        self.odomConstants.pose.covariance[35] = self.sigmak[2][2]
+        
     def fill_odomerty(self)-> Odometry:
         odometry = Odometry()
         odometry.header.stamp = rospy.Time.now() #time stamp
@@ -55,14 +96,7 @@ class Odom():
         odometry.pose.pose.orientation.y = 0.0 #Orientation quaternion “y” w.r.t “parent frame”
         odometry.pose.pose.orientation.z = 0.0 #Orientation quaternion “z” w.r.t “parent frame”s
         odometry.pose.pose.orientation.w = 0.0 #Orientation quaternion “w” w.r.t “parent frame”
-        odometry.pose.covariance = [
-            0.5, 0.01, 0, 0, 0, 0.01,
-            0.01, 0.5, 0, 0, 0, 0.01,
-            0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0,
-            0.01, 0.01, 0, 0, 0, 0.2
-        ] 
+        odometry.pose.covariance = [0]*36 #Position Covariance 6x6 matrix (empty for now)
 
         odometry.twist.twist.linear.x = 0.0 #Linear velocity “x”
         odometry.twist.twist.linear.y = 0.0 #Linear velocity “y”

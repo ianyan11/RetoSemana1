@@ -1,0 +1,11 @@
+digraph G {
+"world" -> "base_link"[label="Broadcaster: /puzzlebot_odom\nAverage rate: 871.503 Hz\nMost recent transform: 811.438 ( -0.001 sec old)\nBuffer length: 0.965 sec\n"];
+"base_link" -> "chassis"[label="Broadcaster: /puzzlebot_sim\nAverage rate: 101.022 Hz\nMost recent transform: 1682035558.586 ( -1682034747.149 sec old)\nBuffer length: 0.970 sec\n"];
+"chassis" -> "camera"[label="Broadcaster: /robot_state_publisher\nAverage rate: 10000.000 Hz\nMost recent transform: 0.000 ( 811.437 sec old)\nBuffer length: 0.000 sec\n"];
+"chassis" -> "left_wheel"[label="Broadcaster: /robot_state_publisher\nAverage rate: 51.087 Hz\nMost recent transform: 811.427 ( 0.010 sec old)\nBuffer length: 0.920 sec\n"];
+"chassis" -> "right_wheel"[label="Broadcaster: /robot_state_publisher\nAverage rate: 51.087 Hz\nMost recent transform: 811.427 ( 0.010 sec old)\nBuffer length: 0.920 sec\n"];
+edge [style=invis];
+ subgraph cluster_legend { style=bold; color=black; label ="view_frames Result";
+"Recorded at time: 811.437"[ shape=plaintext ] ;
+ }->"world";
+}

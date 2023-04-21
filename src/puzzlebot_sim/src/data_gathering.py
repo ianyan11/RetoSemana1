@@ -30,9 +30,9 @@ def save_data(file: csv.writer) -> None:
 
     #get index where gazebo_pose model_name is equal to puzzlebot
     rospy.loginfo(gazebo_pose)
-    rospy.loginfo("x: " + str(rviz_pose.pose.position.x) + " y: " + str(rviz_pose.pose.position.y) + " z: " + str(rviz_pose.pose.orientation.z) + " theta: " + str(angles_rviz[2]) +
-                 " gazebo_x: " + str(gazebo_pose.pose.position.x) + " gazebo_y: " + str(gazebo_pose.pose.position.y) + " gazebo_z: " + str(gazebo_pose.pose.orientation.z) + " gazebo_theta: " + str(angles_gazebo[2]))
-    file.writerow([rviz_pose.pose.position.x, rviz_pose.pose.position.y, rviz_pose.pose.orientation.z, angles_rviz[2], gazebo_pose.pose.position.x, gazebo_pose.pose.position.y, gazebo_pose.pose.orientation.z, angles_gazebo[2]])
+    rospy.loginfo("rviz_x: " + str(rviz_pose.pose.position.x) + " rviz_y: " + str(rviz_pose.pose.position.y) + " rviz_theta: " + str(angles_rviz[2]) +
+                 " gazebo_x: " + str(gazebo_pose.pose.position.x) + " gazebo_y: " + str(gazebo_pose.pose.position.y) + " gazebo_theta: " + str(angles_gazebo[2]))
+    file.writerow([rviz_pose.pose.position.x, rviz_pose.pose.position.y, angles_rviz[2], gazebo_pose.pose.position.x, gazebo_pose.pose.position.y, angles_gazebo[2]])
     
 
 def restart_position() -> None:
@@ -51,33 +51,35 @@ def main():
     rospy.Subscriber('/pose_sim', PoseStamped, handle_rviz_pose)
     #gazebo pose subscriber
     rospy.Subscriber('/gazebo/model_states', ModelStates, handle_gazebo_pose)
+    restart_position()
+    cmd_vel.publish(Twist(Vector3(0, 0, 0), Vector3(0, 0, 0)))
 
     with open('data.csv', 'w', encoding='UTF8') as f:
         file = csv.writer(f)
-        file.writerow(['rviz_x', 'rviz_y', 'rviz_z', 'rviz_theta','gazebo_x', 'gazebo_y', 'gazebo_z', 'gazebo_theta'])
-        restart_position()
-        for i in range(10):
+        file.writerow(['rviz_x', 'rviz_y', 'rviz_theta','gazebo_x', 'gazebo_y', 'gazebo_theta'])
+        for i in range(11):
             cmd_vel.publish(Twist(Vector3(0.3, 0, 0), Vector3(0, 0, 0)))
             #wait for 1 second
-            rospy.sleep(1)
+            rospy.sleep(2)
             #stop
             cmd_vel.publish(Twist(Vector3(0, 0, 0), Vector3(0, 0, 0)))
+            rospy.sleep(1)
 
             #save data
             save_data(file)
-
             #restart position
             restart_position()
+
         for i in range(10):
             cmd_vel.publish(Twist(Vector3(0, 0, 0), Vector3(0, 0, 0.3)))
             #wait for 1 second
-            rospy.sleep(1)
+            rospy.sleep(2)
             #stop
             cmd_vel.publish(Twist(Vector3(0, 0, 0), Vector3(0, 0, 0)))
+            rospy.sleep(1)
 
             #save data
             save_data(file)
-
             #restart position
             restart_position()            
 

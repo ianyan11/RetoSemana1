@@ -41,7 +41,7 @@
   </node>
 
   <node name="puzzlebot_controller" pkg="puzzlebot_control" type="puzzlebot_control_node"/>
-
+  <node name="puzzlebot_odom" pkg="puzzlebot_gazebo" type="tf_map.py"/>
 <include file="$(find puzzlebot_control)/launch/puzzlebot_control.launch"/>"
 
 </launch>

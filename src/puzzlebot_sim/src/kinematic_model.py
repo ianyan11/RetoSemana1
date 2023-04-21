@@ -18,6 +18,8 @@ class kinematic_model:
         self.wl = rospy.Publisher('/wl', Float32, queue_size=10)
         self.wr = rospy.Publisher('/wr', Float32, queue_size=10)
         self.odom = rospy.Publisher('/odom', Odometry, queue_size=10)
+        self.joints = rospy.Publisher('/odom', Odometry, queue_size=10)
+
         self.radius = .05
         self.wheel_distance = .08
         self.frequency = 100
@@ -84,6 +86,9 @@ class kinematic_model:
     def run(self) -> None:
         self.calculate_pose()
         self.calculate_wheels()
+
+    def wheel_joint_state_publisher(self):
+        pass
 
 def main():
     rospy.init_node('puzzlebot_sim', anonymous=True)

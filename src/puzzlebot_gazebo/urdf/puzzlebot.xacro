@@ -9,13 +9,6 @@
 <xacro:include filename="$(find puzzlebot_gazebo)/urdf/macros.xacro" />  
 
 <!-- Dummy link to fiz robot chassis -->
-  <link name="world">
-    <pose>0 0 0 0 0 0</pose>
-  </link>
-  <joint name="world_to_base_link" type="fixed">
-	   <parent link="world"/>
-	   <child link="base_link"/>
-  </joint>
 
   <link name="base_link">
     <pose>0 0 0 0 0 0</pose>
