@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+
+<launch>
+    <include file="$(find gazebo_ros)/launch/empty_world.launch"/>     
+    <!-- No namespace here as we will share this description. 
+       Access with slash at the 'beginning -->
+    <!-- BEGIN ROBOT 1-->
+    <group ns="gazebo_puzzlebot">
+        <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="false" output="screen">
+            <!--<param name="tf_prefix" value="gazebo_puzzlebot" />-->
+        </node>
+        <!--<node name="joint_state_publisher"  pkg="joint_state_publisher" type="joint_state_publisher"/>-->
+        <include file="$(find puzzlebot_sim)/launch/single_bot.launch" >
+            <arg name="init_pose" value="-x 0 -y 0 -z 0" />
+            <arg name="robot_name"  value="gazebo_puzzlebot" />
+        </include>
+    </group>
+
+    <!-- BEGIN ROBOT 2-->
+    <group ns="rviz_puzzlebot">
+        <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="false" output="screen">
+            <!--<param name="tf_prefix" value="rviz_puzzlebot" />-->
+        </node>
+        <!--<node name="joint_state_publisher"  pkg="joint_state_publisher" type="joint_state_publisher"/>-->
+        <include file="$(find puzzlebot_sim)/launch/single_bot.launch" >
+            <arg name="init_pose" value="-x 5 -y 5 -z 0" />
+            <arg name="robot_name"  value="rviz_puzzlebot" />
+        </include>
+    </group>
+    <!--<node name="puzzlebot_odom" pkg="puzzlebot_gazebo" type="tf_map.py"/>-->
+    <node name = "rviz" pkg="rviz" type = "rviz" args = "-d $(find puzzlebot_sim)/puzzlebot_rviz/rviz_robot_sim.rviz" required = "true"/>
+
+</launch>
