@@ -2,7 +2,4 @@
 /.vscode
 /build
 /devel
-/src/puzzlebot_control
-/src/puzzlebot_gazebo
-/src/puzzlebot_sim
 
