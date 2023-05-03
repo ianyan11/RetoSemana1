@@ -18,9 +18,7 @@ int main(int arc, char ** argv)
     ros::init(arc,argv,"puzzlebot_control");
     std::string name;
     ros::param::get("~robot_name",name);
-    ROS_WARN("Robot name: %s",name.c_str());
     name = name.append("/puzzlebot_controller");
-    ROS_WARN("Robot name: %s",name.c_str());
 
     v = 0;
     w = 0;
