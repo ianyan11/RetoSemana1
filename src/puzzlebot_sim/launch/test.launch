@@ -1,0 +1,13 @@
+<launch>
+    <include file="$(find gazebo_ros)/launch/empty_world.launch"/>     
+    <!-- No namespace here as we will share this description. 
+       Access with slash at the 'beginning -->
+        <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="false" output="screen">
+            <!--<param name="tf_prefix" value="gazebo_puzzlebot" />-->
+        </node>
+        <!--<node name="joint_state_publisher"  pkg="joint_state_publisher" type="joint_state_publisher"/>-->
+        <include file="$(find puzzlebot_sim)/launch/single_bot.launch" >
+            <arg name="init_pose" value="-x 0 -y 0 -z 0" />
+            <arg name="robot_name"  value="gazebo_puzzlebot" />
+        </include>
+</launch>

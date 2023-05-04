@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 import rospy
 import math
-from std_msgs.msg import Float32, Empty
+from std_msgs.msg import Float32
+from std_srvs.srv import Empty
 from geometry_msgs.msg import Twist, Pose, TransformStamped, Vector3, Quaternion
 from nav_msgs.msg import Odometry
 from tf2_geometry_msgs import PoseStamped
 from tf.transformations import quaternion_from_euler 
 from tf2_ros import TransformBroadcaster 
+ 
 class kinematic_model:
     def __init__(self):
         self.linear_vel = 0
@@ -18,13 +20,12 @@ class kinematic_model:
         self.wl = rospy.Publisher('/wl', Float32, queue_size=10)
         self.wr = rospy.Publisher('/wr', Float32, queue_size=10)
         self.odom = rospy.Publisher('/odom', Odometry, queue_size=10)
-        self.joints = rospy.Publisher('/odom', Odometry, queue_size=10)
 
         self.radius = .05
         self.wheel_distance = .08
         self.frequency = 100
         rospy.Subscriber('/cmd_vel', Twist, self.update_values)
-        rospy.Subscriber('/restart', Empty, self.restart)
+        rospy.Service('/restart', Empty, self.restart)
 
     def calculate_pose(self) -> None:
         self.x += self.linear_vel *math.cos(self.theta) / self.frequency 
@@ -41,6 +42,7 @@ class kinematic_model:
         self.x = 0
         self.y = 0
         self.theta = 0
+        return []
 
     def publish_stamp(self) -> None:
         poseStamped = PoseStamped()
@@ -54,7 +56,7 @@ class kinematic_model:
         poseStamped.pose.orientation.z = q[2]
         poseStamped.pose.orientation.w = q[3]
 
-        poseStamped.header.frame_id = "base_link"
+        poseStamped.header.frame_id = "rviz_puzzlebot/base_link"
         self.broadcast_transform(poseStamped.pose.orientation)
         self.pub.publish(poseStamped)
 
@@ -76,8 +78,8 @@ class kinematic_model:
         #Fill the transform with the position and orientations
         t.header.stamp = rospy.Time.now()
         #Frame names
-        t.header.frame_id = "base_link"
-        t.child_frame_id = "chassis"
+        t.header.frame_id = "rviz_puzzlebot/base_link"
+        t.child_frame_id = "rviz_puzzlebot/chassis"
         t.transform.translation = Vector3(self.x, self.y, 0)
         t.transform.rotation = orientation
         #Send transform
@@ -86,9 +88,6 @@ class kinematic_model:
     def run(self) -> None:
         self.calculate_pose()
         self.calculate_wheels()
-
-    def wheel_joint_state_publisher(self):
-        pass
 
 def main():
     rospy.init_node('puzzlebot_sim', anonymous=True)

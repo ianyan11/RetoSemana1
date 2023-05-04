@@ -2,7 +2,7 @@
 import rospy
 import numpy as np
 import math
-from std_msgs.msg import Float32, Empty
+from std_msgs.msg import Float32
 from geometry_msgs.msg import Point
 from nav_msgs.msg import Odometry
 from tf.transformations import quaternion_from_euler 
@@ -88,7 +88,7 @@ class Odom():
         odometry = Odometry()
         odometry.header.stamp = rospy.Time.now() #time stamp
         odometry.header.frame_id = "world" #parent frame (joint)
-        odometry.child_frame_id = "base_link" #child frame
+        odometry.child_frame_id = "rviz_puzzlebot/base_link" #child frame
         odometry.pose.pose.position.x = 0.0 #position of the robot “x” w.r.t “parent frame”
         odometry.pose.pose.position.y = 0.0 # position of the robot “x” w.r.t “parent frame”
         odometry.pose.pose.position.z = (self.wheel_radius) #position of the robot “x” w.r.t “parent frame” 
@@ -112,7 +112,7 @@ class Odom():
 
 def main():
     rospy.init_node('localisation', anonymous=True)
-    hz = 200
+    hz = 60
     rate = rospy.Rate(hz)
     model = Odom(hz)
     while not rospy.is_shutdown():

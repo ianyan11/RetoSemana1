@@ -21,12 +21,12 @@
       R: 0.05
 
     topics:
-      cmd_wR: /right_wheel_velocity_controller/command
-      cmd_wL: /left_wheel_velocity_controller/command
-      pub_wr: /wr
-      pub_wl: /wl
-      sub_wr: /right_wheel_velocity_controller/state
-      sub_wl: /left_wheel_velocity_controller/state
-      cmd_vel: /cmd_vel
+      cmd_wR: /$(arg robot_name)/right_wheel_velocity_controller/command
+      cmd_wL: /$(arg robot_name)/left_wheel_velocity_controller/command
+      pub_wr: /$(arg robot_name)/wr
+      pub_wl: /$(arg robot_name)/wl
+      sub_wr: /$(arg robot_name)/right_wheel_velocity_controller/state
+      sub_wl: /$(arg robot_name)/left_wheel_velocity_controller/state
+      cmd_vel: /$(arg robot_name)/cmd_vel
 
       

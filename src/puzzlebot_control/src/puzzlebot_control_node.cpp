@@ -16,6 +16,9 @@ int main(int arc, char ** argv)
 {
     ROS_INFO("[PuzzleBot] Starting control node");
     ros::init(arc,argv,"puzzlebot_control");
+    std::string name;
+    ros::param::get("~robot_name",name);
+    name = name.append("/puzzlebot_controller");
 
     v = 0;
     w = 0;
@@ -24,13 +27,15 @@ int main(int arc, char ** argv)
     prev_wl = 0;
     prev_wr = 0;
 
-
+    //get argument name and save it to a string
     ros::NodeHandle nh;
+
     ros::Time current_time,prev_time;
     current_time = ros::Time::now();
     prev_time = ros::Time::now();
-    std::map<std::string,std::string> topics = FetchTopics("/puzzlebot_controller",nh);
-    std::map<std::string,double> params = FetchParameters("/puzzlebot_controller",nh);
+
+    std::map<std::string,std::string> topics = FetchTopics(name, nh);
+    std::map<std::string,double> params = FetchParameters(name, nh);
    
     ros::Publisher pub_wl_command = nh.advertise<std_msgs::Float64>(topics["cmd_wL"],100);
     ros::Publisher pub_wr_command = nh.advertise<std_msgs::Float64>(topics["cmd_wR"],100);
