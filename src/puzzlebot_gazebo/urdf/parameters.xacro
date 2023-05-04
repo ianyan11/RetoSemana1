@@ -28,5 +28,6 @@
 <xacro:property name="mesh_chassis"  value="$(find puzzlebot_gazebo)/meshes/chassis.stl" />
 <xacro:property name="mesh_wheel"  value="$(find puzzlebot_gazebo)/meshes/wheel.stl" />
 <xacro:property name="mesh_camera"  value="$(find puzzlebot_gazebo)/meshes/camera.stl" />
+<xacro:property name="mesh_lidar"  value="$(find puzzlebot_gazebo)/meshes/lidar.stl" />
 
 </robot>

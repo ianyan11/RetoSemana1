@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
-    <include file="$(find puzzlebot_sim)/launch/week1.launch"/>
+    <include file="$(find puzzlebot_sim)/launch/simple_world.launch" />
+    <include file="$(find puzzlebot_sim)/launch/bots.launch" />
+    <node name="puzzlebot_kinematic" pkg="puzzlebot_sim" type="kinematic_model.py"/>
+    <node name = "rviz" pkg="rviz" type = "rviz" args = "-d $(find puzzlebot_sim)/puzzlebot_rviz/rviz_robot_sim.rviz" required = "true"/>
     <node name="odometry" pkg="puzzlebot_sim" type="odom.py"/>
 </launch>
