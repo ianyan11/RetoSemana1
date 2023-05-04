@@ -2,7 +2,7 @@
 import rospy
 import numpy as np
 import math
-from std_msgs.msg import Float32, Empty
+from std_msgs.msg import Float32
 from geometry_msgs.msg import Point
 from nav_msgs.msg import Odometry
 from tf.transformations import quaternion_from_euler 

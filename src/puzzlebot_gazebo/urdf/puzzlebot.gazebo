@@ -1,13 +1,13 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
   
-  <gazebo reference="chassis">
+  <gazebo reference="$(arg prefix)chassis">
     <material>Gazebo/Yellow</material>
     <mu1>0.01</mu1>
     <mu2>0.01</mu2>
   </gazebo>
 
-  <gazebo reference="left_wheel">
+  <gazebo reference="$(arg prefix)left_wheel">
     <mu1>1.0</mu1>
     <mu2>1.0</mu2>
     <kp>500000.0</kp>
@@ -17,7 +17,7 @@
     <material>Gazebo/Black</material>
   </gazebo>
 
-  <gazebo reference="right_wheel">
+  <gazebo reference="$(arg prefix)right_wheel">
     <mu1>1.0</mu1>
     <mu2>1.0</mu2>
     <kp>500000.0</kp>
@@ -33,7 +33,7 @@
 </gazebo>
    
   <!-- Standard Rapberry camera -->
-  <gazebo reference="camera">
+  <gazebo reference="$(arg prefix)camera">
     <material>Gazebo/Blue</material>
     <sensor type="camera" name="camera">
       <update_rate>30.0</update_rate>

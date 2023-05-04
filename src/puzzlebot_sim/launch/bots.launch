@@ -1,15 +1,29 @@
 <?xml version="1.0"?>
 
 <launch>
-    <include file="$(find gazebo_ros)/launch/empty_world.launch"/>     
-    <!-- No namespace here as we will share this description. 
-       Access with slash at the 'beginning -->
+    <!-- Set up env variable so plugin and textures are found -->
+    <env name="GAZEBO_PLUGIN_PATH" value="$(find puzzlebot_world)/plugins"/> 
+    <env name="GAZEBO_MODEL_PATH" value="$(find puzzlebot_world)/models"/>
+    <env name="GAZEBO_RESOURCE_PATH" value="$(find puzzlebot_world)/models" />
+
+    <!-- these are the arguments you can pass this launch file, for example paused:=true -->
+    <arg name="paused" default="false"/>
+    <arg name="use_sim_time" default="true"/>
+    <arg name="gui" default="true"/>
+    <arg name="headless" default="false"/>
+    <arg name="debug" default="false"/>
+
+    <!-- We resume the logic in empty_world.launch, changing only the name of the world to be launched -->
+    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+        <arg name="world_name" value="$(find puzzlebot_world)/worlds/track.world"/>
+        <arg name="debug" value="$(arg debug)" />
+        <arg name="gui" value="$(arg gui)" />
+        <arg name="paused" value="$(arg paused)"/>
+        <arg name="use_sim_time" value="$(arg use_sim_time)"/>
+        <arg name="headless" value="$(arg headless)"/>
+    </include>
     <!-- BEGIN ROBOT 1-->
     <group ns="gazebo_puzzlebot">
-        <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="false" output="screen">
-            <!--<param name="tf_prefix" value="gazebo_puzzlebot" />-->
-        </node>
-        <!--<node name="joint_state_publisher"  pkg="joint_state_publisher" type="joint_state_publisher"/>-->
         <include file="$(find puzzlebot_sim)/launch/single_bot.launch" >
             <arg name="init_pose" value="-x 0 -y 0 -z 0" />
             <arg name="robot_name"  value="gazebo_puzzlebot" />
@@ -18,16 +32,11 @@
 
     <!-- BEGIN ROBOT 2-->
     <group ns="rviz_puzzlebot">
-        <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="false" output="screen">
-            <!--<param name="tf_prefix" value="rviz_puzzlebot" />-->
-        </node>
-        <!--<node name="joint_state_publisher"  pkg="joint_state_publisher" type="joint_state_publisher"/>-->
         <include file="$(find puzzlebot_sim)/launch/single_bot.launch" >
             <arg name="init_pose" value="-x 5 -y 5 -z 0" />
             <arg name="robot_name"  value="rviz_puzzlebot" />
+            <arg name="spawn"  value="false" />
         </include>
     </group>
-    <!--<node name="puzzlebot_odom" pkg="puzzlebot_gazebo" type="tf_map.py"/>-->
-    <node name = "rviz" pkg="rviz" type = "rviz" args = "-d $(find puzzlebot_sim)/puzzlebot_rviz/rviz_robot_sim.rviz" required = "true"/>
 
 </launch>

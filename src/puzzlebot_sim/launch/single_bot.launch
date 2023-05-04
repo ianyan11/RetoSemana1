@@ -3,14 +3,19 @@
     <arg name="robot_name"/>
     <arg name="init_pose"/>
     <arg name="spawn" default="true"/>
+    <param name="robot_description" command="$(find xacro)/xacro '$(find puzzlebot_gazebo)/urdf/puzzlebot_mod.xacro' prefix:=$(arg robot_name)/" />
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="false" output="screen"/>        
+    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher"/>
 
-    <param name="robot_description" command="$(find xacro)/xacro --inorder '$(find puzzlebot_gazebo)/urdf/puzzlebot_mod.xacro' prefix:=$(arg robot_name)/" />
-
-    <node name="create_model" args="$(arg init_pose) -param robot_description -model $(arg robot_name) -urdf" pkg="gazebo_ros" type="spawn_model"/>
-    <node name="puzzlebot_controller" pkg="puzzlebot_control" type="puzzlebot_control_node">
+    <node if="$(arg spawn)" name="create_model" args="$(arg init_pose) -param robot_description -model $(arg robot_name) -urdf" pkg="gazebo_ros" type="spawn_model"/>
+    <node if="$(arg spawn)" name="puzzlebot_controller" pkg="puzzlebot_control" type="puzzlebot_control_node">
         <param name="robot_name" type="str" value="/$(arg robot_name)" />    
     </node>
-    <include file="$(find puzzlebot_control)/launch/puzzlebot_control.launch">
+    <include if="$(arg spawn)" file="$(find puzzlebot_control)/launch/puzzlebot_control.launch">
         <arg name="robot_name" value="$(arg robot_name)" />
     </include>
+    <node name="$(arg robot_name)_odom" pkg="puzzlebot_gazebo" type="tf_map.py">
+        <param name="robot_name" type="str" value="$(arg robot_name)" />
+    </node>
+
 </launch>
