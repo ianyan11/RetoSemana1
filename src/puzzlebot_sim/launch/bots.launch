@@ -33,7 +33,7 @@
     <!-- BEGIN ROBOT 2-->
     <group ns="rviz_puzzlebot">
         <include file="$(find puzzlebot_sim)/launch/single_bot.launch" >
-            <arg name="init_pose" value="-x 5 -y 5 -z 0" />
+            <arg name="init_pose" value="-x 0 -y 0 -z 0" />
             <arg name="robot_name"  value="rviz_puzzlebot" />
             <arg name="spawn"  value="false" />
         </include>

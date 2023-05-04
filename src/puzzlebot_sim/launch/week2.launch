@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+    <include file="$(find puzzlebot_sim)/launch/week1.launch"/>
+    <node name="odometry" pkg="puzzlebot_sim" type="odom.py"/>
+</launch>
