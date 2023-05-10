@@ -35,6 +35,9 @@ class Bug0:
 
     def laser_callback(self, data):
         self.laser = data
+        self.ifront = 0
+        self.iright = len(self.laser.ranges)/4
+        self.ileft = len(self.laser.ranges)*3/4
 
     def set_robot_velocity(self, cmd_vel):
         self.pubRviz.publish(cmd_vel)
@@ -61,8 +64,7 @@ class Bug0:
                 else:
                     cmd_vel = Twist()
 
-                    #Que rangos se utilizarian para el lidar?????????? aqui puse si encuentra algo directamente de frente
-                    if self.laser.ranges[0] < self.d2obstacle:
+                    if self.laser.ranges[self.ifront] < self.d2obstacle:
                         # Obstacle detected, switch to BUG mode
                         self.state = 'BUG'
 
@@ -76,17 +78,30 @@ class Bug0:
             elif self.state == 'BUG':
                 # Follow the obstacle contour
                 cmd_vel = Twist()
-                cmd_vel.linear.x = 0.2
-                cmd_vel.angular.z = -0.5
+                #Si tiene algo alfrente
+                if(self.laser.ranges[self.ifront] < self.d2obstacle):
+                    cmd_vel.angular.z = -0.5
+                    self.set_robot_velocity(cmd_vel)    
+
+                #si tiene algo a la izquierda
+                if(self.laser.ranges[self.ileft] < self.d2obstacle):
+                    cmd_vel.linear.x = 0.2
+                else:
+                #cuando ya no tenga nada a la izquierda
+                    cmd_vel.angular.z = 0.5
+
                 self.set_robot_velocity(cmd_vel)
 
                 #cuando ya no tenga nada entre su frente y su izquierda
-                if self.laser.ranges[0] > self.d2obstacle:
+                if (self.laser.ranges[0] > self.d2obstacle) and (self.laser.ranges[self.ileft] > self.d2obstacle):
                     # Obstacle cleared, switch back to RUNNING mode
                     self.state = 'RUNNING'
 
-            elif self.state == 'REACHED':                
-                self.set_robot_velocity(0)
+            elif self.state == 'REACHED':   
+                cmd_vel = Twist()
+                cmd_vel.linear.x = 0
+                cmd_vel.angular.z = 0             
+                self.set_robot_velocity(cmd_vel)
                 rospy.loginfo('Reached goal!')
                 return True
 
