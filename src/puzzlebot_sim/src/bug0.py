@@ -26,7 +26,7 @@ class Bug0:
 
         self.d2goal_threshold = 0.2
         self.a2goal_threshold = 0.1
-        self.d2obstacle = .8
+        self.d2obstacle = 1
 
         self.state = 'RUNNING'
 
@@ -42,8 +42,14 @@ class Bug0:
 
     def set_goal(self, req):
         self.goal = req.goal
-
         self.run()
+
+    #funcion para obtener el laser de un angulo especifico.
+    def get_laser_from_angle(self, angle):
+        angle_min = self.laser.angle_min
+        angle_increment = self.laser.angle_increment
+        index = int((angle - angle_min) / angle_increment)
+        return self.laser.ranges[index]
 
     def run(self):
         while (True):
@@ -69,19 +75,22 @@ class Bug0:
                     if abs(yaw - math.atan2(self.goal.y - y, self.goal.x - x)) > self.a2goal_threshold:
                         cmd_vel.angular.z = 0.5 if yaw < math.atan2(self.goal.y - y, self.goal.x - x) else -0.3
                     else:
-                        cmd_vel.linear.x = 0.3
+                        cmd_vel.linear.x = 0.1
 
                     self.set_robot_velocity(cmd_vel)
 
             elif self.state == 'BUG':
-                # Follow the obstacle contour
+                # Seguir el cntorno del obstaculo con un control P con el laser a 90 grados
                 cmd_vel = Twist()
-                cmd_vel.linear.x = 0.2
-                cmd_vel.angular.z = -0.5
+                cmd_vel.linear.x = 0.1
+                cmd_vel.angular.z = 0.3 * (self.get_laser_from_angle(3*math.pi/2))
                 self.set_robot_velocity(cmd_vel)
 
+                #calcular angulo entre puzzlebot y goal tomando en cuenta el angulo del robot
+                angle = math.atan2(self.goal.y - y, self.goal.x - x) - yaw
+                print("La pared esta a: ", self.get_laser_from_angle(angle), " metros")
                 #cuando ya no tenga nada entre su frente y su izquierda
-                if self.laser.ranges[0] > self.d2obstacle:
+                if self.get_laser_from_angle(angle) > self.d2obstacle:
                     # Obstacle cleared, switch back to RUNNING mode
                     self.state = 'RUNNING'
 
