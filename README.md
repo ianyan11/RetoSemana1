@@ -6,3 +6,7 @@
 `rosrun puzzlebot_sim teleop_twist_keyboard.py`
 # Run Week 4
 `roslaunch puzzlebot_sim week4.launch 2> >(grep -v TF_REPEATED_DATA)`
+
+`rosrun puzzlebot_sim bug2.py`
+
+`rosservice call /puzzlebot_setGoal [GOAL]`
