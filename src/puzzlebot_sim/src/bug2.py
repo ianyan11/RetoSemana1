@@ -26,7 +26,6 @@ class Bug2Algorithm:
         self.robot_odom = rospy.Subscriber('/odom', Odometry, self.odom_callback)
         # Publishers
         self.cmd_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
-        self.cmd_pub_gazebo = rospy.Publisher('/gazebo_puzzlebot/cmd_vel', Twist, queue_size=10)
 
         # Service
         self.goal_service = rospy.Service('/puzzlebot_setGoal', SetGoal, self.set_goal_service_callback)
@@ -160,7 +159,6 @@ class Bug2Algorithm:
         cmd_vel.linear.x = self.current_speed
 
         self.cmd_pub.publish(cmd_vel)
-        self.cmd_pub_gazebo.publish(cmd_vel)
 
     # Function to normalize an angle to the range [-pi, pi]
     def normalize_angle(self, angle):

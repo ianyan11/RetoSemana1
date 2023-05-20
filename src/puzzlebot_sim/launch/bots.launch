@@ -8,7 +8,6 @@
             <arg name="robot_name"  value="gazebo_puzzlebot" />
         </include>
     </group>
-
     <!-- BEGIN ROBOT 2-->
     <group ns="rviz_puzzlebot">
         <include file="$(find puzzlebot_sim)/launch/single_bot.launch" >

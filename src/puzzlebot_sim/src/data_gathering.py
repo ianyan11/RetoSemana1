@@ -15,12 +15,7 @@ class data_gathering:
         self.restart_gazebo = rospy.Publisher('/gazebo/set_model_state', ModelState, queue_size=10)
         rospy.Subscriber('/pose_sim', PoseStamped, self.handle_rviz_pose)
         rospy.Subscriber('/gazebo/model_states', ModelStates, self.handle_gazebo_pose)
-        self.gazebo_cmd_vel = rospy.Publisher('/gazebo_puzzlebot/cmd_vel', Twist, queue_size=10)
         self.cmd_vel = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
-
-    def set_speed(self, speed: Twist) -> None:
-        self.gazebo_cmd_vel.publish(speed)
-        self.cmd_vel.publish(speed)
 
     def handle_rviz_pose(self, pose: PoseStamped) -> None:
         self.rviz_pose = pose
@@ -59,16 +54,17 @@ class data_gathering:
         rospy.init_node('data_gathering', anonymous=True)    
         #gazebo pose subscriber
         self.restart_position()
-        self.set_speed(Twist(Vector3(0, 0, 0), Vector3(0, 0, 0)))
+        stop = Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
+        self.cmd_vel.publish(stop)
         with open('data.csv', 'w', encoding='UTF8') as f:
             file = csv.writer(f)
             file.writerow(['rviz_x', 'rviz_y', 'rviz_theta','gazebo_x', 'gazebo_y', 'gazebo_theta'])
             for i in range(11):
-                self.set_speed(Twist(Vector3(0.3, 0, 0), Vector3(0, 0, 0)))
+                self.cmd_vel.publish(Twist(Vector3(0.3, 0, 0), Vector3(0, 0, 0)))
                 #wait for 1 second
                 rospy.sleep(2)
                 #stop
-                self.set_speed(Twist(Vector3(0, 0, 0), Vector3(0, 0, 0)))
+                self.cmd_vel.publish(stop)
                 rospy.sleep(1)
 
                 #save data
@@ -77,11 +73,11 @@ class data_gathering:
                 self.restart_position()
 
             for i in range(10):
-                self.set_speed(Twist(Vector3(0, 0, 0), Vector3(0, 0, 0.3)))
+                self.cmd_vel.publish(Twist(Vector3(0, 0, 0), Vector3(0, 0, 0.3)))
                 #wait for 1 second
                 rospy.sleep(2)
                 #stop
-                self.set_speed(Twist(Vector3(0, 0, 0), Vector3(0, 0, 0)))
+                self.cmd_vel.publish(stop)
                 rospy.sleep(1)
 
                 #save data
