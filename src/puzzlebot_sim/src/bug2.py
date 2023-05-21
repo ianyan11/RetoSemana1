@@ -175,7 +175,10 @@ class Bug2Algorithm:
             if self.detect_obstacle_ahead():
                 self.circumnavigate_obstacle()
             elif self.goal_distance < self.GOAL_REACHED_THRESHOLD:
-                self.set_robot_speed(Twist())
+                cmd_vel = Twist()
+                cmd_vel.linear.x = 0
+                cmd_vel.angular.z = 0
+                self.set_robot_speed(cmd_vel)
                 rospy.loginfo("Goal reached!")
                 return True
             else:
