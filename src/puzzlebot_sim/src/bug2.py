@@ -72,6 +72,8 @@ class Bug2Algorithm:
     # Callback function to process goal setting service requests
     def set_goal_service_callback(self, req):
         self.goal = req.goal
+        # Update deltas
+        self.calculate_goal_direction()
         # Start the bug2 algorithm towards the new goal
         completed = self.run()
         return SetGoalResponse(completed)
