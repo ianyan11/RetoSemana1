@@ -1,0 +1,30 @@
+<launch>
+    <arg name="markerSize"      value=".33"/>    <!-- in m -->
+    <arg name="marker_frame"    value="marker_frame"/>  <!-- leave empty and the pose will be published wrt param parent_name -->
+    <arg name="cam_frame"       value="gazebo_puzzlebot/camera"/>  <!-- leave empty and the pose will be published wrt param parent_name -->
+    <arg name="ref_frame"       value="gazebo_puzzlebot/camera"/>  <!-- leave empty and the pose will be published wrt param parent_name -->
+
+    <node pkg="aruco_ros" type="marker_publisher" name="aruco_marker_publisher">
+        <remap from="/camera_info" to="/gazebo_puzzlebot/camera/camera_info" />
+        <remap from="/image" to="/gazebo_puzzlebot/camera/image_raw" />
+        <param name="image_is_rectified" value="False"/>
+        <param name="marker_size"        value="$(arg markerSize)"/>
+        <param name="reference_frame"    value="$(arg ref_frame)"/>   <!-- frame in which the marker pose will be refered -->
+        <param name="camera_frame"       value="$(arg cam_frame)"/>
+        <param name="marker_frame"       value="$(arg marker_frame)"/>
+        <param name="detection_mode"     value="DM_VIDEO_FAST" />
+        <param name="set_y_perpendicular" value="False" />
+        <param name="dictionary"         value="ARUCO"/>
+
+    </node>
+    <node pkg="puzzlebot_sim" type="marker_show" name="gazebo_markers_show" output="screen">
+        <param name="marker_size"        value="$(arg markerSize)"/>
+        <param name="reference_frame"    value="$(arg ref_frame)"/>   <!-- frame in which the marker pose will be refered -->
+        <param name="camera_frame"       value="$(arg cam_frame)"/>
+        <param name="marker_frame"       value="$(arg marker_frame)"/>
+        <param name="advertise"       value="/gazebo_puzzlebot"/>
+        <param name="subscribe"       value="/aruco_marker_publisher"/>
+    </node>
+    <node pkg="puzzlebot_sim" type="lidar_transfrom.py" name="lidar_transform" output="screen"/>
+    <node pkg="puzzlebot_sim" type="marker_transform.py" name="marker_transfrom" output="screen"/>
+</launch>

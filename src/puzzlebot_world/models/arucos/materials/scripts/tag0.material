@@ -1,0 +1,13 @@
+material tag0
+{
+  technique
+  {
+    pass
+    {  
+      texture_unit
+      {
+        texture aruco-0.png
+      }
+    }
+  }
+}
