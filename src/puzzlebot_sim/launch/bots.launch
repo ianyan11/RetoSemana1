@@ -1,15 +1,6 @@
 <?xml version="1.0"?>
 
 <launch>
-    <!-- BEGIN ROBOT 1-->
-    <group ns="gazebo_puzzlebot">
-        <include file="$(find puzzlebot_sim)/launch/single_bot.launch" >
-            <arg name="init_pose" value="-x 0 -y 0 -z 0" />
-            <arg name="robot_name"  value="gazebo_puzzlebot" />
-        </include>
-    </group>
-
-    <!-- BEGIN ROBOT 2-->
     <group ns="rviz_puzzlebot">
         <include file="$(find puzzlebot_sim)/launch/single_bot.launch" >
             <arg name="init_pose" value="-x 0 -y 0 -z 0" />
@@ -17,5 +8,4 @@
             <arg name="spawn"  value="false" />
         </include>
     </group>
-
 </launch>

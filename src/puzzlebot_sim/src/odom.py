@@ -10,8 +10,8 @@ from tf.transformations import quaternion_from_euler
 class Odom():
 
     def __init__(self, rate):
-        self.kr = .6
-        self.kl = .6
+        self.kr = .8
+        self.kl = .8
         self.wl = 0
         self.wr = 0
         self.rate =rate

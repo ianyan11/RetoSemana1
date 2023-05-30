@@ -19,17 +19,10 @@
 
   <buildtool_depend>catkin</buildtool_depend>
   <!-- Use depend as a shortcut for packages that are both build and exec dependencies -->
-  <depend>cv_bridge</depend>
-  <depend>geometry_msgs</depend>
-  <depend>image_transport</depend>
   <depend>roscpp</depend>
-  <depend>tf</depend>
-  <depend>aruco</depend>
-  <depend>aruco_msgs</depend>
-  <depend>sensor_msgs</depend>
-  <depend>visualization_msgs</depend>
+  <depend>rospy</depend>
   <depend>std_msgs</depend>
-  <depend>aruco_ros</depend>
+  <depend>geometry_msgs</depend>
   <!--   Note that this is equivalent to the following: -->
   <!--   <exec_depend>roscpp</exec_depend> -->
   <!-- Use build_depend for packages you need at compile time: -->

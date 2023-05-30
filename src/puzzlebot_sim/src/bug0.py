@@ -26,7 +26,7 @@ class Bug0:
 
         self.d2goal_threshold = 0.2
         self.a2goal_threshold = 0.1
-        self.d2obstacle = 1
+        self.d2obstacle = .8
 
         self.state = 'RUNNING'
 
@@ -42,15 +42,9 @@ class Bug0:
 
     def set_goal(self, req):
         self.goal = req.goal
+
         self.run()
 
-    #funcion para obtener el laser de un angulo especifico.
-    def get_laser_from_angle(self, angle):
-        angle_min = self.laser.angle_min
-        angle_increment = self.laser.angle_increment
-        index = int((angle - angle_min) / angle_increment)
-        return self.laser.ranges[index]
-    
     def range_index(self, angle):
         min_angle = self.laser.angle_min
         max_angle = self.laser.angle_max
@@ -144,7 +138,7 @@ class Bug0:
                     
                     #follow goal
                     else:
-                        cmd_vel.linear.x = 0.1
+                        cmd_vel.linear.x = 0.3
 
                     self.set_robot_velocity(cmd_vel)
 
