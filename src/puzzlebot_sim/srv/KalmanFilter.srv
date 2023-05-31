@@ -1,0 +1,14 @@
+# Definición del servicio KalmanFilterService
+# Request (entrada)
+float64 aruco_x
+float64 aruco_y
+float64 aruco_theta
+float64 encoder_x
+float64 encoder_y
+float64 encoder_theta
+---
+# Response (salida)
+float64 est_x
+float64 est_y
+float64 est_theta
+float64[36] covariance

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
+    <remap from="/gazebo_puzzlebot/cmd_vel" to="/cmd_vel"/> 
     <include file="$(find puzzlebot_sim)/launch/world_launch/obstacle_world.launch" />
     <include file="$(find puzzlebot_sim)/launch/bots.launch" />
     <node name="puzzlebot_kinematic" pkg="puzzlebot_sim" type="kinematic_model.py"/>
