@@ -6,4 +6,5 @@
     <node name="puzzlebot_kinematic" pkg="puzzlebot_sim" type="kinematic_model.py"/>
     <node name = "rviz" pkg="rviz" type = "rviz" args = "-d $(find puzzlebot_sim)/puzzlebot_rviz/week6.rviz" required = "true"/>
     <node name="odometry" pkg="puzzlebot_sim" type="odom_v2.py" output="screen"/>
+    <include file="$(find puzzlebot_sim)/launch/aruco_detection.launch" />
 </launch>

@@ -24,7 +24,7 @@ public:
 	{
 		std::string advertise, subscribe;
 		nh.param<std::string>("advertise", advertise, "");
-		nh.param<std::string>("subscribe", subscribe, "");
+		nh.param<std::string>("robot_name", subscribe, "");
 
 		sub = nh.subscribe( subscribe + "/markers", 10, &MarkerRvizShow::markers_callback, this);
 		marker_rviz_pub = nh.advertise<visualization_msgs::MarkerArray>((advertise + "/markers_show"), 1);

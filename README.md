@@ -12,4 +12,4 @@
 `rosservice call /puzzlebot_setGoal [GOAL]`
 # Run Week 6
 `roslaunch puzzlebot_sim week6.launch 2> >(grep -v TF_REPEATED_DATA)`
-
+`roslaunch puzzlebot_sim aruco_detection.launch 2> >(grep -v TF_REPEATED_DATA BUFFER)`

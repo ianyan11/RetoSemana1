@@ -1,29 +1,41 @@
 #!/usr/bin/env python3
 import rospy
 import numpy as np
-from math import cos, sin
+from math import cos, sin, sqrt, atan2
 from std_msgs.msg import Float32
 from geometry_msgs.msg import Point
+from gazebo_msgs.srv import GetModelState, GetModelStateResponse
 from nav_msgs.msg import Odometry
 from tf.transformations import quaternion_from_euler
-
+from aruco_msgs.msg import MarkerArray, Marker
 
 class Odom():
-
     def __init__(self):
         self.kr = .6
+        self.kl = .6
+        self.sigma_r = .001
+        self.sigma_phi = .001
         self.kl = .6
         self.wl = 0
         self.wr = 0
         self.l = .09
         self.r = .05
+        self.robot_name = rospy.get_param('robot_name', '')
         self.__s = np.empty((3, 1)) # State vector
         self.__sigma = np.empty((3, 3)) # Covariance matrix
         self.__previous_time = rospy.Time.now()
         rospy.Subscriber('/wl', Float32, self.__update_wl)
         rospy.Subscriber('/wr', Float32, self.__update_wr)
+        rospy.Subscriber(f"{self.robot_name}/markers", MarkerArray, self.__update_markers)
+        self.markers = MarkerArray()
         self.odom_publisher = rospy.Publisher('/odom', Odometry, queue_size=10)
         self.odom_message = self.__fill_odomerty()
+        rospy.wait_for_service('/gazebo/get_model_state')
+        self.get_model_state = rospy.ServiceProxy('/gazebo/get_model_state', GetModelState)
+
+    def __update_markers(self, markers: MarkerArray) -> None:
+        """Updates the markers array"""
+        self.markers = markers
 
     def __update_wl(self, wl: Float32) -> None:
         """Updates the right wheel speed"""
@@ -76,7 +88,7 @@ class Odom():
                       [delta_theta]])
         return s
 
-    def get_Hs_matrix(self, s: np.ndarray, delta_u: np.ndarray, delta_t: float) -> np.ndarray:
+    def get_Hs_matrix(self, s: np.ndarray, delta_u: np.ndarray) -> np.ndarray:
         """Returns the Hs matrix where Hs is the jacobian of h(s, u) with respect to s
 
         Attributes:
@@ -128,8 +140,8 @@ class Odom():
             [2/self.l, 2/self.l]])
         return nabla_omega
 
-    def calculate_covariance(self, sigma : np.ndarray, u : np.ndarray) -> np.ndarray:
-        """ Returns the covariance matrix
+    def priori_covariance(self, sigma : np.ndarray, u : np.ndarray) -> np.ndarray:
+        """ Returns the covariance matrix before the measurement update
 
         Attributes:
             delta_t: change in time
@@ -146,15 +158,114 @@ class Odom():
         delta_t = self.__calulate_delta_t() # Calculate the change in time
         delta_u = u * delta_t # Calculate the displacement vector
         s = self.update_s_vector(delta_u, self.__s) # get update the state vector
-        Hs = self.get_Hs_matrix(s, delta_u, delta_t) # Get the Hs matrix
+        Hs = self.get_Hs_matrix(s, delta_u) # Get the Hs matrix
         Qs = self.get_matrix_Q(s, delta_t) # Get the Qs matrix
         sigma = Hs @ self.__sigma @ Hs.T + Qs # Calculate the covariance matrix
         self.__s = s # save the state vector
         return sigma # return the covariance matrix
 
+    def posteriori_covariance(self, sigma : np.ndarray, u : np.ndarray) -> np.ndarray:
+        """ Returns the covariance matrix after the measurement update
+
+        Attributes:
+            delta_t: change in time
+            delta_u: displacement vector
+            s: state vector
+            Hs: jacobian of h(s, u) with respect to s
+            Qs: nondeterministic noise matrix
+            
+        :param sigma: covariance matrix
+        :param u: input vector
+        
+        :return: covariance matrix
+        """
+        marker : Marker
+        for marker in self.markers.markers:
+            marker_id = marker.id
+            marker_position = self.get_marker_position(marker_id)
+            real_marker_position = self.get_real_marker_position(marker_id)
+            s =  self.__s # get the state vector
+            delta_x = marker_position[0][0] - s[0][0] # calculate the change in x
+            delta_y = marker_position[1][0] - s[1][0] # calculate the change in y
+            p = delta_x**2 + delta_y**2 # calculate the change in distance
+            z = self.calculate_observation_matrix(delta_x, delta_y, p, s) # calculate the observation matrix
+            G = self.linearised_observation_matrix(delta_x, delta_y, p) # calculate the linearised observation matrix
+            Z = G @ sigma @ G.T + self.get_matrix_R(z) # calculate the Z matrix
+            K = sigma @ G.T @ np.linalg.inv(Z) # calculate the K matrix
+            s = s + K @ (real_marker_position - marker_position) # calculate the state vector
+            sigma = (np.identity(3) - K @ G) @ sigma # calculate the covariance matrix
+            self.__s = s # save the state vector
+        return sigma # return the covariance matrix
+    def get_matrix_R(self, observation_matrix : np.ndarray) -> np.ndarray:
+        """Returns the matrix R
+
+        :return: R
+        """
+        sigma_r = self.sigma_r * observation_matrix[0][0]
+        sigma_phi = self.sigma_phi * observation_matrix[1][0]
+        return np.array([[sigma_r**2, 0],
+                         [0, sigma_phi**2]])
+    def linearised_observation_matrix(self, delta_x : float, delta_y : float, p :float) -> np.ndarray:
+        """ Returns the linearised observation matrix
+
+        :param delta_x: change in x
+        :param delta_y: change in y
+        :param p: change in distance
+
+        :return: linearised observation matrix
+        """
+        return np.array([[-delta_x/sqrt(p), -delta_y/sqrt(p), 0],
+                         [delta_y/p, -delta_x/p, -1]])
+
+    def calculate_observation_matrix(self, delta_x : float, delta_y : float, p : float, s : np.ndarray) -> np.ndarray:
+        """ Returns the observation matrix
+
+        :param delta_x: change in x
+        :param delta_y: change in y
+        :param p: change in distance
+        :param s: state vector
+
+        :return: observation matrix z
+        """
+        theta = s[2][0]
+        return np.array([[sqrt(p)],
+                         [atan2(delta_y, delta_x) - theta]])
+    
+    def get_real_marker_position(self, marker_id : int) -> np.ndarray:
+        """ Returns the real position of the marker
+
+        :param marker_id: id of the marker
+
+        :return: position of the marker
+        """
+        #rosservice call /gazebo/get_model_state '{model_name: "marker_{marker_id}}"}'
+        state : GetModelStateResponse
+        state = self.get_model_state(f"model_name: 'Aruco tag {marker_id}'")   
+        return np.array([[state.pose.position.x],
+                            [state.pose.position.y]]) 
+        
+
+    def get_marker_position(self, marker_id : int) -> np.ndarray:
+        """ Returns the position of the marker
+
+        :param marker_id: id of the marker
+
+        :return: position of the marker
+        """
+        marker : Marker
+        for marker in self.markers.markers:
+            if marker.id == marker_id:
+                return np.array([[marker.pose.pose.position.x],
+                                 [marker.pose.pose.position.y]])
+
+
     def calculate_odometry(self) -> None:
         u = self.get_u_vector() # Get the input vectors
-        sigma = self.calculate_covariance(self.__sigma, u)
+        #prediction_step
+        sigma = self.priori_covariance(self.__sigma, u)
+        #correction_step
+        sigma = self.posteriori_covariance(sigma, u)
+
 
         self.odom_message.pose.pose.position = Point(
             self.__s[0][0], self.__s[1][0], self.r)
