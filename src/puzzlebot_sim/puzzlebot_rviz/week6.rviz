@@ -7,12 +7,12 @@ Panels:
         - /Global Options1
         - /Status1
         - /RobotModel1
+        - /TF1
         - /TF1/Frames1
         - /TF1/Tree1
         - /Odometry1/Shape1
         - /Odometry1/Covariance1
         - /Odometry1/Covariance1/Orientation1
-        - /Image1
         - /MarkerArray1
       Splitter Ratio: 0.5
     Tree Height: 539
@@ -112,7 +112,7 @@ Visualization Manager:
       Frames:
         All Enabled: false
         gazebo_puzzlebot/base_link:
-          Value: false
+          Value: true
         gazebo_puzzlebot/camera:
           Value: false
         gazebo_puzzlebot/chassis:
@@ -123,10 +123,8 @@ Visualization Manager:
           Value: false
         gazebo_puzzlebot/right_wheel:
           Value: false
-        marker_frame0:
-          Value: false
         rviz_puzzlebot/base_link:
-          Value: false
+          Value: true
         rviz_puzzlebot/camera:
           Value: false
         rviz_puzzlebot/chassis:
@@ -150,8 +148,7 @@ Visualization Manager:
           gazebo_puzzlebot/base_link:
             gazebo_puzzlebot/chassis:
               gazebo_puzzlebot/camera:
-                marker_frame0:
-                  {}
+                {}
               gazebo_puzzlebot/left_wheel:
                 {}
               gazebo_puzzlebot/lidar:
@@ -250,7 +247,7 @@ Visualization Manager:
       Marker Topic: /gazebo_puzzlebot/markers_show
       Name: MarkerArray
       Namespaces:
-        aruco_markers: true
+        {}
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -286,7 +283,7 @@ Visualization Manager:
       Marker Topic: /rviz_puzzlebot/markers_show
       Name: MarkerArray
       Namespaces:
-        aruco_markers: true
+        {}
       Queue Size: 100
       Value: true
   Enabled: true
@@ -317,7 +314,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 7.092002868652344
+      Distance: 6.104479789733887
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -333,9 +330,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.4153977632522583
+      Pitch: 0.3703976273536682
       Target Frame: <Fixed Frame>
-      Yaw: 1.6667176485061646
+      Yaw: 3.1567206382751465
     Saved: ~
 Window Geometry:
   Displays:
@@ -355,5 +352,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 1920
-  X: 1884
-  Y: 0
+  X: 640
+  Y: 27

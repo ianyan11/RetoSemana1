@@ -22,7 +22,7 @@ class Odom():
 
         rospy.Subscriber('/wl', Float32, self.update_wl)
         rospy.Subscriber('/wr', Float32, self.update_wr)
-        self.odom = rospy.Publisher('/odom', Odometry, queue_size=10)
+        self.odom = rospy.Publisher('/odom1', Odometry, queue_size=10)
         self.odomConstants = self.fill_odomerty()
 
     def update_wl(self, wl: Float32) -> None:
@@ -73,13 +73,15 @@ class Odom():
                        [2/self.l, -2/self.l]])
         sdk = np.array([[self.kr*abs(self.wr), 0],
                         [0, self.kl*abs(self.wl)]])
-        qk = np.dot(np.dot(dwk,sdk),dwk.T)
+        qk = dwk @ sdk @ dwk.T
         return qk
     
     def calculcate_covariance(self) -> None:
         hk = self.get_hk()
         Qk =  self.get_qk()
-        self.sigmak = np.dot(np.dot(hk, self.sigmak), hk.T) + Qk
+        self.sigmak = hk @ self.sigmak @ hk.T + Qk
+        
+        
         self.odomConstants.pose.covariance[0] = self.sigmak[0][0] 
         self.odomConstants.pose.covariance[1] = self.sigmak[0][1]
         self.odomConstants.pose.covariance[5] = self.sigmak[0][2]
