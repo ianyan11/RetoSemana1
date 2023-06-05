@@ -6,7 +6,7 @@ material tag0
     {  
       texture_unit
       {
-        texture aruco-0.png
+        texture 4x4_0.png
       }
     }
   }

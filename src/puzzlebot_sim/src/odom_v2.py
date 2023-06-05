@@ -256,6 +256,7 @@ class Odom():
         sigma_phi = self.sigma_phi * observation_matrix[1][0]
         return np.array([[sigma_r**2, 0],
                          [0, sigma_phi**2]])
+    
     def linearised_observation_matrix(self, delta_x : float, delta_y : float, p :float) -> np.ndarray:
         """ Returns the linearised observation matrix
 
@@ -303,8 +304,6 @@ class Odom():
         return np.array([[sqrt(p)],
                          [atan2(delta_y, delta_x)]])
     
-
-
     def get_real_marker_position(self, marker_id : int) -> np.ndarray:
         """ Returns the real position of the marker
 
@@ -320,7 +319,6 @@ class Odom():
         return np.array([[markerState.pose.position.x],
                             [markerState.pose.position.y]]) 
         
-
     def get_marker_position(self, marker_id : int) -> np.ndarray:
         """ Returns the position of the marker
 

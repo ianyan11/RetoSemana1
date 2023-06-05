@@ -14,8 +14,7 @@
         <param name="marker_frame"       value="$(arg marker_frame)"/>
         <param name="detection_mode"     value="DM_VIDEO_FAST" />
         <param name="set_y_perpendicular" value="False" />
-        <param name="dictionary"         value="ARUCO"/>
-
+        <param name="dictionary"         value="DICT_4X4_50"/>
     </node>
     <node pkg="puzzlebot_sim" type="marker_show" name="gazebo_markers_show" output="screen">
         <param name="marker_size"        value="$(arg markerSize)"/>

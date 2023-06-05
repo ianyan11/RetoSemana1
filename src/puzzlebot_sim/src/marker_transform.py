@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 import rospy
 import tf2_ros
-from sensor_msgs.msg import LaserScan
 from visualization_msgs.msg import MarkerArray, Marker
-
+from std_msgs.msg import ColorRGBA
 def marker_array_callback(msg : MarkerArray):
     try:
         ret = MarkerArray()
         while len(msg.markers) > 0:
             marker = Marker()
             marker = msg.markers.pop()
+            marker.color = ColorRGBA(0, 0, 1, 1)
+            marker.lifetime = rospy.Duration(0)
             marker.header.frame_id= 'rviz_puzzlebot/camera'
             ret.markers.append(marker)
 
