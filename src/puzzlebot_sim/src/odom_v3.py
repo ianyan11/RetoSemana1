@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 import rospy
 import numpy as np
-from math import cos, sin, sqrt, atan2, pi
+from math import cos, sin, sqrt, atan2
 from std_msgs.msg import Float32
-from geometry_msgs.msg import Point, Pose, PoseStamped, Vector3
-from gazebo_msgs.srv import GetModelState, GetModelStateResponse, GetModelStateRequest
+from geometry_msgs.msg import Point
+from gazebo_msgs.srv import GetModelState, GetModelStateResponse
 from nav_msgs.msg import Odometry
-from std_msgs.msg import UInt32MultiArray
-from tf.transformations import quaternion_from_euler
+from tf.transformations import quaternion_from_euler, euler_from_quaternion
+import tf2_ros
 from aruco_msgs.msg import MarkerArray, Marker
-from tf2_ros import TransformBroadcaster, TransformStamped
-import tf
+
 class Odom():
     def __init__(self):
         self.kr = .6
@@ -23,27 +22,17 @@ class Odom():
         self.l = .09
         self.r = .05
         self.robot_name = rospy.get_param('robot_name', '')
-        self.__s = np.array([[0],[0],[0]]) # State vector
-        self.__sigma = np.array([[0,0,0],[0,0,0],[0,0,0]]) # Covariance matrix
+        self.__s = np.empty((3, 1)) # State vector
+        self.__sigma = np.empty((3, 3)) # Covariance matrix
         self.__previous_time = rospy.Time.now()
         rospy.Subscriber('/wl', Float32, self.__update_wl)
         rospy.Subscriber('/wr', Float32, self.__update_wr)
-        rospy.Subscriber("/aruco_marker_publisher/markers", MarkerArray, self.__update_markers)
-        rospy.Subscriber("/aruco_marker_publisher/markers_list", UInt32MultiArray, self.__update_markers_list)
-
+        rospy.Subscriber(f"{self.robot_name}/markers", MarkerArray, self.__update_markers)
         self.markers = MarkerArray()
-        self.marker_list = UInt32MultiArray()
-
         self.odom_publisher = rospy.Publisher('/odom', Odometry, queue_size=10)
-        self.robot_pose_publisher = rospy.Publisher('/pose_sim', PoseStamped, queue_size=10)
         self.odom_message = self.__fill_odomerty()
         rospy.wait_for_service('/gazebo/get_model_state')
         self.get_model_state = rospy.ServiceProxy('/gazebo/get_model_state', GetModelState)
-        self.listener = tf.TransformListener()
-    
-    def __update_markers_list(self, marker_list: UInt32MultiArray) -> None:
-        """Updates the marker list"""
-        self.marker_list = marker_list
 
     def __update_markers(self, markers: MarkerArray) -> None:
         """Updates the markers array"""
@@ -95,9 +84,9 @@ class Odom():
         theta = s[2][0]  # If you don add the [0] it will be a 2d array and you will get an error. s[2].item() also works.
         delta_d = delta_u[0]
         delta_theta = delta_u[1]
-        s = np.array([[delta_d*cos(theta) + s[0][0]],
-                      [delta_d*sin(theta) + s[1][0]],
-                      [delta_theta + theta]])
+        s = s + np.array([[delta_d*cos(theta)],
+                      [delta_d*sin(theta)],
+                      [delta_theta]])
         return s
 
     def get_Hs_matrix(self, s: np.ndarray, delta_u: np.ndarray) -> np.ndarray:
@@ -176,7 +165,7 @@ class Odom():
         self.__s = s # save the state vector
         return sigma # return the covariance matrix
 
-    def posteriori_covariance(self, sigma : np.ndarray) -> np.ndarray:
+    def posteriori_covariance(self, sigma : np.ndarray, u : np.ndarray) -> np.ndarray:
         """ Returns the covariance matrix after the measurement update
 
         Attributes:
@@ -192,61 +181,25 @@ class Odom():
         :return: covariance matrix
         """
         marker : Marker
-        if len(self.marker_list.data) > 0:
-            for marker in self.markers.markers:
-                
-                marker_id = marker.id
-                marker_position = self.get_marker_position(marker_id)
-                real_marker_position = self.get_real_marker_position(marker_id)
-                s =  self.__s # get the state vector
-                print()
-                delta_x = marker_position[0][0] + .1 # calculate the change in x
-                delta_y = marker_position[1][0] # calculate the change in y
-                p = delta_x**2 + delta_y**2 # calculate the change in distance
-                z = self.calculate_observation_matrix(delta_x, delta_y, p, s) # calculate the observation matrix
-                G = self.linearised_observation_matrix(delta_x, delta_y, p) # calculate the linearised observation matrix
-                Z = G @ sigma @ G.T + np.array([[0.1, 0],[0, 0.02]]) # calculate the Z matrix
-                K = sigma @ G.T @ np.linalg.inv(Z) # calculate the K matrix
-                delta_real = np.array([[real_marker_position[0][0]] - s[0][0], [real_marker_position[1][0]] - s[1][0]])
-                p2 = delta_real[0][0]**2 + delta_real[1][0]**2
-                z2 = self.calculate_real_observation_matrix(delta_real[0][0], delta_real[1][0], p2, s)
-                #rospy.loginfo(f"\nreal marker : {z2.T},\ndetected marker : {z.T},\nrobot_position : {s.T},\nmarker_position : {real_marker_position.T}")
-                s = s + K @ (z-z2) # calculate the state vector
-                sigma = (np.identity(3) - K @ G) @ sigma # calculate the covariance matrix
-                self.__s = s # save the state vector
-
-        return sigma
-    
-    def broadcast_transform(self, pose: Pose):
-        #Initialize broadcaster
-        br = TransformBroadcaster()
-        t = TransformStamped()
-        #Fill the transform with the position and orientations
-        t.header.stamp = rospy.Time.now()
-        #Frame names
-        t.header.frame_id = "rviz_puzzlebot/base_link"
-        t.child_frame_id = "rviz_puzzlebot/chassis"
-        t.transform.translation = Vector3(pose.position.x, pose.position.y, 0)
-        t.transform.rotation= pose.orientation
-        #Send transform
-        br.sendTransform(t)
-
-    def publish_stamp(self, s) -> None:
-        poseStamped = PoseStamped()
-        poseStamped.pose.position.x = s[0][0]
-        poseStamped.pose.position.y = s[1][0]
-        #angle to quaternion using tf2
-        q= quaternion_from_euler(0, 0, s[2][0])
-
-        poseStamped.pose.orientation.x = q[0]
-        poseStamped.pose.orientation.y = q[1]
-        poseStamped.pose.orientation.z = q[2]
-        poseStamped.pose.orientation.w = q[3]
-
-        poseStamped.header.frame_id = "rviz_puzzlebot/base_link"
-        self.broadcast_transform(poseStamped.pose)
-        self.robot_pose_publisher.publish(poseStamped)
-
+        for marker in self.markers.markers:
+            marker_id = marker.id
+            marker_position = self.get_marker_position(marker_id)
+            real_marker_position = self.get_real_marker_position(marker_id)
+            s =  self.__s # get the state vector
+            delta_x = marker_position[0][0] - s[0][0] # calculate the change in x
+            delta_y = marker_position[1][0] - s[1][0] # calculate the change in y
+            angles = euler_from_quaternion(marker.pose.pose.orientation.x, marker.pose.pose.orientation.y, marker.pose.pose.orientation.z, marker.pose.pose.orientation.w)
+            delta_yaw = s[2][0] - angles[2]# calculate the change in yaw
+            z = np.array([[delta_x],
+                            [delta_y],
+                            [delta_yaw]]) # calculate the observation matrix
+            G = np.identity(3) # calculate the linearised observation matrix
+            Z = G @ sigma @ G.T + self.get_matrix_R(z) # calculate the Z matrix
+            K = sigma @ G.T @ np.linalg.inv(Z) # calculate the K matrix
+            s = s + K @ (real_marker_position - marker_position) # calculate the state vector
+            sigma = (np.identity(3) - K @ G) @ sigma # calculate the covariance matrix
+            self.__s = s # save the state vector
+        return sigma # return the covariance matrix
     def get_matrix_R(self, observation_matrix : np.ndarray) -> np.ndarray:
         """Returns the matrix R
 
@@ -268,28 +221,6 @@ class Odom():
         return np.array([[-delta_x/sqrt(p), -delta_y/sqrt(p), 0],
                          [delta_y/p, -delta_x/p, -1]])
 
-    def calculate_real_observation_matrix(self, delta_x : float, delta_y : float, p : float, s : np.ndarray) -> np.ndarray:
-        """ Returns the observation matrix
-
-        :param delta_x: change in x
-        :param delta_y: change in y
-        :param p: change in distance
-        :param s: state vector
-
-        :return: observation matrix z
-        """
-        theta = s[2][0]
-        error_angle = atan2(delta_y, delta_x)-theta
-        #set the angle between -pi and pi
-        while error_angle > pi:
-            if error_angle > pi:
-                error_angle -= 2*pi
-            elif error_angle < -pi:
-                error_angle += 2*pi
-
-        return np.array([[sqrt(p)],
-                         [error_angle]])
-        
     def calculate_observation_matrix(self, delta_x : float, delta_y : float, p : float, s : np.ndarray) -> np.ndarray:
         """ Returns the observation matrix
 
@@ -300,11 +231,10 @@ class Odom():
 
         :return: observation matrix z
         """
+        theta = s[2][0]
         return np.array([[sqrt(p)],
-                         [atan2(delta_y, delta_x)]])
+                         [atan2(delta_y, delta_x) - theta]])
     
-
-
     def get_real_marker_position(self, marker_id : int) -> np.ndarray:
         """ Returns the real position of the marker
 
@@ -313,12 +243,10 @@ class Odom():
         :return: position of the marker
         """
         #rosservice call /gazebo/get_model_state '{model_name: "marker_{marker_id}}"}'
-        markerState : GetModelStateResponse
-        modelRequest = GetModelStateRequest()
-        modelRequest.model_name = f'Aruco tag{marker_id}'
-        markerState = self.get_model_state(modelRequest)   
-        return np.array([[markerState.pose.position.x],
-                            [markerState.pose.position.y]]) 
+        state : GetModelStateResponse
+        state = self.get_model_state(f"model_name: 'Aruco tag {marker_id}'")   
+        return np.array([[state.pose.position.x],
+                            [state.pose.position.y]]) 
         
 
     def get_marker_position(self, marker_id : int) -> np.ndarray:
@@ -331,38 +259,19 @@ class Odom():
         marker : Marker
         for marker in self.markers.markers:
             if marker.id == marker_id:
-                # x = marker.pose.pose.position.z +.1
-                # y = -marker.pose.pose.position.x
-                # pose : PoseStamped
-                # pose = self.transform_pose(marker.pose.pose, "rviz_puzzlebot/chassis", "rviz_puzzlebot/base_link")
-                return np.array([[marker.pose.pose.position.z], [-marker.pose.pose.position.x]])
-        
-        return np.array([[marker.pose.pose.position.z], [-marker.pose.pose.position.x]])
-    
-    def transform_pose(self, input_pose : Pose, from_frame : str, to_frame : str) -> PoseStamped:
-        # **Assuming /tf2 topic is being broadcasted
+                x = marker.pose.pose.position.z +.1
+                y = -marker.pose.pose.position.x
+                return np.array([[x],
+                                 [y]])
 
-        pose_stamped = PoseStamped()
-        pose_stamped.pose = input_pose
-        pose_stamped.header.frame_id = from_frame
-        pose_stamped.header.stamp = rospy.Time(0)
-        # ** It is important to wait for the listener to start listening. Hence the rospy.Duration(1)
-        try:
-            # Give the listener some time to receive the transform
-            self.listener.waitForTransform(to_frame, from_frame, rospy.Time(0), rospy.Duration(4.0))
-            # Now transform the pose
-            transformed_pose = self.listener.transformPose(to_frame, pose_stamped)
-            return transformed_pose
-        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException) as e:
-            rospy.loginfo(e)
-            return None
 
     def calculate_odometry(self) -> None:
         u = self.get_u_vector() # Get the input vectors
         #prediction_step
         sigma = self.priori_covariance(self.__sigma, u)
         #correction_step
-        sigma = self.posteriori_covariance(sigma)
+        sigma = self.posteriori_covariance(sigma, u)
+
 
         self.odom_message.pose.pose.position = Point(
             self.__s[0][0], self.__s[1][0], self.r)
@@ -383,7 +292,6 @@ class Odom():
         self.odom_message.pose.covariance[35] = sigma[2][2]
         self.odom_message.twist.twist.linear.x = u[0]
         self.odom_message.twist.twist.angular.z = u[1]
-        self.publish_stamp(self.__s)
         self.__sigma = sigma
         self.odom_publisher.publish(self.odom_message)
 

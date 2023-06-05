@@ -44,21 +44,6 @@ class kinematic_model:
         self.theta = 0
         return []
 
-    def publish_stamp(self) -> None:
-        poseStamped = PoseStamped()
-        poseStamped.pose.position.x = self.x
-        poseStamped.pose.position.y = self.y
-        #angle to quaternion using tf2
-        q= quaternion_from_euler(0, 0, self.theta)
-
-        poseStamped.pose.orientation.x = q[0]
-        poseStamped.pose.orientation.y = q[1]
-        poseStamped.pose.orientation.z = q[2]
-        poseStamped.pose.orientation.w = q[3]
-
-        poseStamped.header.frame_id = "rviz_puzzlebot/base_link"
-        self.broadcast_transform(poseStamped.pose.orientation)
-        self.pub.publish(poseStamped)
 
 
     def update_values(self, twist: Twist) -> None:
@@ -78,13 +63,29 @@ class kinematic_model:
         #Fill the transform with the position and orientations
         t.header.stamp = rospy.Time.now()
         #Frame names
-        t.header.frame_id = "rviz_puzzlebot/base_link"
-        t.child_frame_id = "rviz_puzzlebot/chassis"
+        t.header.frame_id = "world"
+        t.child_frame_id = "kinematic_model/pose"
         t.transform.translation = Vector3(self.x, self.y, 0)
         t.transform.rotation = orientation
         #Send transform
         br.sendTransform(t)
 
+    def publish_stamp(self) -> None:
+        poseStamped = PoseStamped()
+        poseStamped.pose.position.x = self.x
+        poseStamped.pose.position.y = self.y
+        #angle to quaternion using tf2
+        q= quaternion_from_euler(0, 0, self.theta)
+
+        poseStamped.pose.orientation.x = q[0]
+        poseStamped.pose.orientation.y = q[1]
+        poseStamped.pose.orientation.z = q[2]
+        poseStamped.pose.orientation.w = q[3]
+
+        poseStamped.header.frame_id = "world"
+        self.broadcast_transform(poseStamped.pose.orientation)
+        self.pub.publish(poseStamped)
+            
     def run(self) -> None:
         self.calculate_pose()
         self.calculate_wheels()

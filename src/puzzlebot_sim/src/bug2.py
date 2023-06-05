@@ -40,6 +40,7 @@ class Bug2Algorithm:
         self.goal = None 
         self.robot_position = Pose() 
         self.current_speed = 0.0
+        self.current_angular_speed = 0.0
         self.robot_orientation = 0.0 # Robot orientation in RADIANS in world frame
         # Calculate the maximum allowed speed change based on the acceleration limit
         MAX_ACCELERATION = 0.3 # m/s^2
@@ -73,6 +74,8 @@ class Bug2Algorithm:
     # Callback function to process goal setting service requests
     def set_goal_service_callback(self, req):
         self.goal = req.goal
+        self.calculate_goal_direction()
+
         # Start the bug2 algorithm towards the new goal
         completed = self.run()
         return SetGoalResponse(completed)
@@ -155,12 +158,19 @@ class Bug2Algorithm:
         if abs(speed_change) > self.MAX_SPEED_CHANGE:
             speed_change = self.MAX_SPEED_CHANGE if speed_change > 0 else -self.MAX_SPEED_CHANGE
 
+        angular_speed_change = cmd_vel.angular.z - self.current_angular_speed
+        # If the desired speed change exceeds the maximum, limit it
+        if abs(angular_speed_change) > self.MAX_SPEED_CHANGE:
+            angular_speed_change = self.MAX_SPEED_CHANGE if angular_speed_change > 0 else -self.MAX_SPEED_CHANGE
+
         # Update the current speed
         self.current_speed += speed_change
+        self.current_angular_speed += angular_speed_change
         cmd_vel.linear.x = self.current_speed
+        cmd_vel.angular.z = self.current_angular_speed
 
         self.cmd_pub.publish(cmd_vel)
-        self.cmd_pub_gazebo.publish(cmd_vel)
+        #self.cmd_pub_gazebo.publish(cmd_vel)
 
     # Function to normalize an angle to the range [-pi, pi]
     def normalize_angle(self, angle):
@@ -177,7 +187,7 @@ class Bug2Algorithm:
             if self.detect_obstacle_ahead():
                 self.circumnavigate_obstacle()
             elif self.goal_distance < self.GOAL_REACHED_THRESHOLD:
-                self.set_robot_speed(Twist())
+                self.cmd_pub.publish(Twist())
                 rospy.loginfo("Goal reached!")
                 return True
             else:
